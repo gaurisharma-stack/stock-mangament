@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Package, ArrowRightLeft, ShoppingCart, Receipt, Factory, Database } from 'lucide-react';
+import { LayoutDashboard, Package, ArrowRightLeft, ShoppingCart, Receipt, Factory, Database, LogOut, Copy, CheckCircle, Users } from 'lucide-react';
+import { auth } from '../api';
 
 const navItems = [
   { section: 'Overview', items: [
@@ -16,14 +18,24 @@ const navItems = [
   ]},
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ user }) {
+  const [copied, setCopied] = useState(false);
+
+  const copyInviteCode = () => {
+    if (user?.inviteCode) {
+      navigator.clipboard.writeText(user.inviteCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
         <div className="brand-icon"><Database size={20} /></div>
         <div>
           <h1>StockFlow</h1>
-          <p>Inventory Management</p>
+          <p>{user?.companyName || 'Inventory Management'}</p>
         </div>
       </div>
 
@@ -46,10 +58,30 @@ export default function Sidebar() {
         </div>
       ))}
 
+      {/* Invite Code Section */}
+      {user?.inviteCode && (
+        <div className="sidebar-invite">
+          <div className="sidebar-section-title">Invite Team</div>
+          <div className="invite-code-bar" onClick={copyInviteCode} title="Click to copy invite code">
+            <Users size={14} />
+            <span className="invite-code-value">{user.inviteCode}</span>
+            {copied ? <CheckCircle size={14} className="invite-copied" /> : <Copy size={14} />}
+          </div>
+        </div>
+      )}
+
       <div className="sidebar-footer">
-        <div className="sidebar-footer-info">
-          <div className="sidebar-footer-dot"></div>
-          <span className="sidebar-footer-text">System Online — v1.0</span>
+        <div className="sidebar-user-info">
+          <div className="sidebar-user-avatar">
+            {user?.name?.charAt(0)?.toUpperCase() || '?'}
+          </div>
+          <div className="sidebar-user-details">
+            <div className="sidebar-user-name">{user?.name || 'User'}</div>
+            <div className="sidebar-user-role">{user?.role === 'admin' ? 'Admin' : 'Member'}</div>
+          </div>
+          <button className="btn-logout" onClick={auth.logout} title="Logout">
+            <LogOut size={16} />
+          </button>
         </div>
       </div>
     </aside>

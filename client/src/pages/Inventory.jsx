@@ -53,11 +53,15 @@ export default function Inventory() {
     } catch (err) { showMsg('error', err.message); }
   };
 
-  const handleDelete = async (code) => {
-    if (!confirm(`Are you sure you want to discontinue item ${code}? This will mark it as inactive.`)) return;
+  const handleDelete = async (item) => {
+    const isDiscontinued = item.status === 'Discontinued';
+    const confirmMsg = isDiscontinued
+      ? `⚠️ Permanently delete "${item.name}" (${item.item_code})?\n\nThis will remove the item AND all its transaction history. This cannot be undone.`
+      : `Discontinue "${item.name}" (${item.item_code})?\n\nThe item will be marked as inactive and hidden from dashboard stats. You can permanently delete it afterwards.`;
+    if (!confirm(confirmMsg)) return;
     try {
-      await api.deleteItem(code);
-      showMsg('success', `Item ${code} discontinued`);
+      await api.deleteItem(item.item_code);
+      showMsg('success', isDiscontinued ? `Item ${item.item_code} permanently deleted` : `Item ${item.item_code} discontinued`);
       load();
     } catch (err) { showMsg('error', err.message); }
   };
@@ -121,7 +125,7 @@ export default function Inventory() {
                     <div style={{ display: 'flex', gap: 4 }}>
                       <button className="btn btn-ghost btn-sm" onClick={() => viewDetail(item.item_code)} title="View history"><Eye size={14} /></button>
                       <button className="btn btn-ghost btn-sm" onClick={() => setEditItem({ ...item })} title="Edit item"><Pencil size={14} /></button>
-                      <button className="btn btn-ghost btn-sm" onClick={() => handleDelete(item.item_code)} title="Discontinue item" style={{ color: 'var(--danger)' }}><Trash2 size={14} /></button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => handleDelete(item)} title={item.status === 'Discontinued' ? 'Permanently delete item' : 'Discontinue item'} style={{ color: 'var(--danger)', background: item.status === 'Discontinued' ? 'rgba(255,92,114,0.12)' : undefined }}><Trash2 size={14} /></button>
                     </div>
                   </td>
                 </tr>

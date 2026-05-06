@@ -1,14 +1,53 @@
 const API = import.meta.env.DEV ? 'http://localhost:5000/api' : '/api';
 
+function getToken() {
+  return localStorage.getItem('stockflow_token');
+}
+
+function setToken(token) {
+  localStorage.setItem('stockflow_token', token);
+}
+
+function removeToken() {
+  localStorage.removeItem('stockflow_token');
+}
+
 async function request(url, options = {}) {
+  const token = getToken();
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const res = await fetch(`${API}${url}`, {
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     ...options,
   });
+
+  // If unauthorized, clear token and redirect to login
+  if (res.status === 401) {
+    removeToken();
+    window.location.reload();
+    throw new Error('Session expired. Please log in again.');
+  }
+
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Request failed');
   return data;
 }
+
+export const auth = {
+  register: (data) => request('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
+  join: (data) => request('/auth/join', { method: 'POST', body: JSON.stringify(data) }),
+  login: (data) => request('/auth/login', { method: 'POST', body: JSON.stringify(data) }),
+  getMe: () => request('/auth/me'),
+  setToken,
+  getToken,
+  logout: () => {
+    removeToken();
+    window.location.reload();
+  },
+};
 
 export const api = {
   // Items
